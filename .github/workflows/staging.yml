@@ -1,8 +1,8 @@
-name: Prod Integration
+name: Prod QA
 on:
   push:
     branches:
-      - develop
+      - release
 
 jobs:
   build:
@@ -18,8 +18,8 @@ jobs:
       - name: Authorize Org
         run: |
           echo Authorize Org
-          CONSUMER_KEY=${{ secrets.CONSUMER_KEY_INT }}
-          USER_NAME=${{ secrets.USER_NAME_INT }}
+          CONSUMER_KEY=${{ secrets.CONSUMER_KEY_STG }}
+          USER_NAME=${{ secrets.USER_NAME_STG }}
           JWT_PATH=$GITHUB_WORKSPACE/develop/server.key
           # TODO
           # Implement encripted server.key
@@ -28,14 +28,14 @@ jobs:
       - name: Run Tests
         run: |
           echo Run Tests
-          USER_NAME=${{ secrets.USER_NAME_INT }}
+          USER_NAME=${{ secrets.USER_NAME_STG }}
           packageFilePath=$GITHUB_WORKSPACE/manifest/package.xml
           ./sfdx/bin/sfdx force:source:deploy -x $packageFilePath -w 100 -u $USER_NAME --checkonly --testlevel RunLocalTests --json
 
       - name: Run Deployment
         run: |
           echo Run Tests
-          USER_NAME=${{ secrets.USER_NAME_INT }}
+          USER_NAME=${{ secrets.USER_NAME_STG }}
           packageFilePath=$GITHUB_WORKSPACE/manifest/package.xml
           ./sfdx/bin/sfdx force:source:deploy -x $packageFilePath -w 100 -u $USER_NAME --testlevel RunLocalTests --json
 

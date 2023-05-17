@@ -1,4 +1,3 @@
-
 name: Prod Deploy
 on:
   push:
@@ -16,50 +15,31 @@ jobs:
           echo Download SFDX
           curl https://developer.salesforce.com/media/salesforce-cli/sfdx/channels/stable/sfdx-linux-x64.tar.gz | tar -xz
           
-
-      - name: Download jq
+      - name: Authorize Org
         run: |
-          echo Download jq
-          apt update && apt -y install jq
+          echo Authorize Org
+          CONSUMER_KEY=${{ secrets.CONSUMER_KEY_PROD }}
+          USER_NAME=${{ secrets.USER_NAME_PROD }}
+          JWT_PATH=$GITHUB_WORKSPACE/develop/server.key
+          # TODO
+          # Implement encripted server.key
+          ./sfdx/bin/sfdx auth:jwt:grant --clientid $CONSUMER_KEY --jwtkeyfile $JWT_PATH --username $USER_NAME
 
-      - name: Initial Test
+      - name: Run Tests
         run: |
-          ./sfdx/bin/sfdx --version
-          jq
+          echo Run Tests
+          USER_NAME=${{ secrets.USER_NAME_PROD }}
+          packageFilePath=$GITHUB_WORKSPACE/manifest/package.xml
+          ./sfdx/bin/sfdx force:source:deploy -x $packageFilePath -w 100 -u $USER_NAME --checkonly --testlevel RunLocalTests --json
 
-      # - name: Authorize Org
-      #   run: |
-      #     echo Authorize Org
-      #     CONSUMER_KEY=${{ secrets.CONSUMER_KEY_PROD }}
-      #     USER_NAME=${{ secrets.USER_NAME_PROD }}
-      #     JWT_PATH=$GITHUB_WORKSPACE/develop/server.key
-      #     # TODO
-      #     # Implement encripted server.key
-      #     ./sfdx/bin/sfdx auth:jwt:grant --clientid $CONSUMER_KEY --jwtkeyfile $JWT_PATH --username $USER_NAME
+      - name: Run Deployment
+        run: |
+          echo Run Tests
+          USER_NAME=${{ secrets.USER_NAME_PROD }}
+          packageFilePath=$GITHUB_WORKSPACE/manifest/package.xml
+          ./sfdx/bin/sfdx force:source:deploy -x $packageFilePath -w 100 -u $USER_NAME --testlevel RunLocalTests --json
 
-      # - name: Convert to Metadata
-      #   run: |
-      #     echo Convert to Metadata
-      #     chmod +rwx $GITHUB_WORKSPACE
-      #     mkdir $GITHUB_WORKSPACE/outputdir
-      #     ls -la
-      #     ./sfdx/bin/sfdx force:source:convert -r $GITHUB_WORKSPACE/force-app -d $GITHUB_WORKSPACE/outputdir -x $GITHUB_WORKSPACE/manifest/package.xml
-      #     cp $GITHUB_WORKSPACE/manifest/destructiveChangesPost.xml $GITHUB_WORKSPACE/outputdir/destructiveChangesPost.xml
-      #     cp $GITHUB_WORKSPACE/manifest/destructiveChangesPre.xml $GITHUB_WORKSPACE/outputdir/destructiveChangesPre.xml
-
-      # - name: Run Tests
-      #   run: |
-      #     echo Run Tests
-      #     USER_NAME=${{ secrets.USER_NAME }}
-      #     ./sfdx/bin/sfdx force:mdapi:deploy -d $GITHUB_WORKSPACE/outputdir -u $USER_NAME --checkonly --wait 30 --testlevel RunLocalTests --json
-
-      # - name: Deploy
-      #   run: |
-      #     echo Deploy
-      #     USER_NAME=${{ secrets.USER_NAME }}
-      #     ./sfdx/bin/sfdx force:mdapi:deploy -d $GITHUB_WORKSPACE/outputdir -u $USER_NAME --wait 30 --testlevel NoTestRun --json
-
-      # - name: Logout
-      #   run: |
-      #     echo Logout
-      #     ./sfdx/bin/sfdx force:auth:logout -a -p
+      - name: Logout
+        run: |
+          echo Logout
+          ./sfdx/bin/sfdx force:auth:logout -a -p
