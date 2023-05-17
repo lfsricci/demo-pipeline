@@ -20,7 +20,7 @@ jobs:
           echo Authorize Org
           CONSUMER_KEY=${{ secrets.CONSUMER_KEY_STG }}
           USER_NAME=${{ secrets.USER_NAME_STG }}
-          JWT_PATH=$GITHUB_WORKSPACE/develop/server.key
+          JWT_PATH=$GITHUB_WORKSPACE/devops/server.key
           # TODO
           # Implement encripted server.key
           ./sfdx/bin/sfdx auth:jwt:grant --clientid $CONSUMER_KEY --jwtkeyfile $JWT_PATH --username $USER_NAME
