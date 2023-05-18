@@ -12,9 +12,9 @@ jobs:
 
       - name: Download SFDX
         run: |
-          jq
-          # echo Download SFDX
-          # curl https://developer.salesforce.com/media/salesforce-cli/sfdx/channels/stable/sfdx-linux-x64.tar.gz | tar -xz
+          jq --help
+# echo Download SFDX
+# curl https://developer.salesforce.com/media/salesforce-cli/sfdx/channels/stable/sfdx-linux-x64.tar.gz | tar -xz
           
       # - name: Authorize Org
       #   run: |
