@@ -25,29 +25,19 @@ jobs:
           # Implement encripted server.key
           ./sfdx/bin/sfdx auth:jwt:grant --clientid $CONSUMER_KEY --jwtkeyfile $JWT_PATH --username $USER_NAME
 
-      - name: Run Tests and Deploy
+      - name: Run Tests
         run: |
           echo Run Tests
           USER_NAME=${{ secrets.USER_NAME_INT }}
           packageFilePath=$GITHUB_WORKSPACE/manifest/package.xml
-          checkDeployFile=checkdeployresult$(date '+%Y-%m-%d%H:%M:%S').json
+          ./sfdx/bin/sfdx force:source:deploy -x $packageFilePath -w 100 -u $USER_NAME --checkonly --testlevel RunLocalTests --json
 
-          ./sfdx/bin/sfdx force:source:deploy -x $packageFilePath -w 100 -u $USER_NAME --checkonly --testlevel RunLocalTests --json > $checkDeployFile
-
-          if [ $( jq -r '.result.status' $checkDeployFile ) == 'Failed' ]; then
-            echo Validate Failed
-            rm $checkDeployFile
-            exit 1
-          elif [ $( jq -r '.result.status' $checkDeployFile ) == 'Succeeded' ]; then
-            DEPLOYID=$( jq -r '.result.id' $checkDeployFile )
-            echo Run quick deploy - ID: $DEPLOYID
-            ./sfdx/bin/sfdx force:source:deploy -u $USER_NAME -q $DEPLOYID
-            rm $checkDeployFile
-          else
-            echo Do nothing - Something very wrong happened
-            rm $checkDeployFile
-            exit 1
-          fi
+      - name: Run Deploy
+        run: |
+          echo Run Deploy
+          USER_NAME=${{ secrets.USER_NAME_INT }}
+          packageFilePath=$GITHUB_WORKSPACE/manifest/package.xml
+          ./sfdx/bin/sfdx force:source:deploy -x $packageFilePath -w 100 -u $USER_NAME --testlevel RunLocalTests --json
 
       - name: Destructive Deploy
         run: |
