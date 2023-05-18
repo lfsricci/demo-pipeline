@@ -12,59 +12,51 @@ jobs:
 
       - name: Download SFDX
         run: |
-          jq --help
-# echo Download SFDX
-# curl https://developer.salesforce.com/media/salesforce-cli/sfdx/channels/stable/sfdx-linux-x64.tar.gz | tar -xz
+          echo Download SFDX
+          curl https://developer.salesforce.com/media/salesforce-cli/sfdx/channels/stable/sfdx-linux-x64.tar.gz | tar -xz
           
-      # - name: Authorize Org
-      #   run: |
-      #     echo Authorize Org
-      #     CONSUMER_KEY=${{ secrets.CONSUMER_KEY_INT }}
-      #     USER_NAME=${{ secrets.USER_NAME_INT }}
-      #     JWT_PATH=$GITHUB_WORKSPACE/devops/server.key
-      #     # TODO
-      #     # Implement encripted server.key
-      #     ./sfdx/bin/sfdx auth:jwt:grant --clientid $CONSUMER_KEY --jwtkeyfile $JWT_PATH --username $USER_NAME
+      - name: Authorize Org
+        run: |
+          echo Authorize Org
+          CONSUMER_KEY=${{ secrets.CONSUMER_KEY_INT }}
+          USER_NAME=${{ secrets.USER_NAME_INT }}
+          JWT_PATH=$GITHUB_WORKSPACE/devops/server.key
+          # TODO
+          # Implement encripted server.key
+          ./sfdx/bin/sfdx auth:jwt:grant --clientid $CONSUMER_KEY --jwtkeyfile $JWT_PATH --username $USER_NAME
 
-      # - name: Run Tests
-      #   run: |
-      #     echo Run Tests
-      #     USER_NAME=${{ secrets.USER_NAME_INT }}
-      #     packageFilePath=$GITHUB_WORKSPACE/manifest/package.xml
-      #     ./sfdx/bin/sfdx force:source:deploy -x $packageFilePath -w 100 -u $USER_NAME --checkonly --testlevel RunLocalTests --json
+      - name: Run Tests and Deploy
+        run: |
+          echo Run Tests
+          USER_NAME=${{ secrets.USER_NAME_INT }}
+          packageFilePath=$GITHUB_WORKSPACE/manifest/package.xml
+          checkDeployFile=checkdeployresult$(date '+%Y-%m-%d%H:%M:%S').json
 
-      # - name: Run Deployment
-      #   run: |
-      #     echo Run Tests
-      #     USER_NAME=${{ secrets.USER_NAME_INT }}
-      #     packageFilePath=$GITHUB_WORKSPACE/manifest/package.xml
-      #     ./sfdx/bin/sfdx force:source:deploy -x $packageFilePath -w 100 -u $USER_NAME --testlevel RunLocalTests --json
+          ./sfdx/bin/sfdx force:source:deploy -x $packageFilePath -w 100 -u $USER_NAME --checkonly --testlevel RunLocalTests --json > $checkDeployFile
 
-      # - name: Logout
-      #   run: |
-      #     echo Logout
-      #     ./sfdx/bin/sfdx force:auth:logout -a -p
+          if [ $( jq -r '.result.status' $checkDeployFile ) == 'Failed' ]; then
+            echo Validate Failed
+            rm $checkDeployFile
+            exit 1
+          elif [ $( jq -r '.result.status' $checkDeployFile ) == 'Succeeded' ]; then
+            DEPLOYID=$( jq -r '.result.id' $checkDeployFile )
+            echo Run quick deploy - ID: $DEPLOYID
+            ./sfdx/bin/sfdx force:source:deploy -u $USER_NAME -q $DEPLOYID
+            rm $checkDeployFile
+          else
+            echo Do nothing - Something very wrong happened
+            rm $checkDeployFile
+            exit 1
+          fi
 
+      - name: Destructive Deploy
+        run: |
+          echo Destructive Deploy
+          USER_NAME=${{ secrets.USER_NAME_INT }}
+          destructiveFolderPath=$GITHUB_WORKSPACE/destructiveChanges
+          ./sfdx/bin/sfdx force:mdapi:deploy -d $destructiveFolderPath -u $USER_NAME --ignorewarnings --testlevel RunLocalTests --json
 
-# local packageFilePath=$1
-# local username=$2
-# local checkDeployFile=checkdeployresult$(date '+%Y-%m-%d%H:%M:%S').json
-
-# ./sfdx/bin/sfdx force:source:deploy -x $packageFilePath -w 100 -u $username --checkonly --testlevel RunLocalTests --json > $checkDeployFile
-
-# if [ $( jq -r '.result.status' $checkDeployFile ) == 'Failed' ]; then
-#   echo "Validate Failed"
-#   rm $checkDeployFile
-#   exit 1
-# elif [ $( jq -r '.result.status' $checkDeployFile ) == 'Succeeded' ]; then
-#   DEPLOYID=$( jq -r '.result.id' $checkDeployFile )
-#   echo "Run quick deploy - ID:" $DEPLOYID
-#   ./sfdx/bin/sfdx force:source:deploy -u $username -q $DEPLOYID
-#   rm $checkDeployFile
-# else
-#   echo "Do nothing - Something very wrong happened"
-#   rm $checkDeployFile
-#   exit 1
-# fi
-
-# ./sfdx/bin/sfdx force:mdapi:deploy -d $destructiveFolderPath -u $username --ignorewarnings --json
+      - name: Logout
+        run: |
+          echo Logout
+          ./sfdx/bin/sfdx force:auth:logout -a -p
