@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
 	<types>
-		<members>Class1</members>
-		<members>Class1Test</members>
+		<members>Class2</members>
+		<members>Class2Test</members>
 		<name>ApexClass</name>
+	</types>
+	<types>
+		<members>Luiz__c</members>
+		<name>CustomObject</name>
 	</types>
 	<version>55.0</version>
 </Package>
