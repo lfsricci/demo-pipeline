@@ -3,8 +3,8 @@ public class Class2Test {
     @isTest
     static void testMethod1() {
         Test.startTest();
-        Class1 class1 = new Class1();
-        String temp = class1.method1();
+        Class2 class2 = new Class1();
+        String temp = class2.method1();
         System.assertEquals('Method', temp);
         Test.stopTest();
     }
