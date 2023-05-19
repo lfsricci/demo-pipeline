@@ -1,5 +1,5 @@
-public with sharing class Class1 {
-    public Class1() {
-
+public class Class1 {
+    public String method1() {
+        return 'Method';
     }
 }
